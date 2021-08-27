@@ -28,6 +28,7 @@ subconfig.vm.provision "file", source: "./templates/id_rsa.pub", destination: "~
  subconfig.vm.provision "shell", inline: <<-SHELL
 echo '192.168.56.5 puppetmaster.local puppet' >> /etc/hosts
 echo '192.168.56.6 puppetclient.local' >> /etc/hosts
+echo '192.168.56.8 puppetclient2.local' >> /etc/hosts
  wget https://apt.puppetlabs.com/puppet7-release-focal.deb 
 sudo dpkg -i puppet7-release-focal.deb 
 sudo apt -y update 
@@ -40,8 +41,7 @@ sudo hostname puppetmaster.local
 sudo systemctl start puppetserver
 sudo systemctl enable puppetserver
 sudo service puppet start
-sudo /opt/puppetlabs/bin/puppetserver ca list --all 
- 
+sudo /opt/puppetlabs/bin/puppetserver ca list --all  
 SHELL
 
 end
@@ -66,6 +66,29 @@ end
     subconfig.vm.provision "shell", inline: <<-SHELL
     sudo apt-get update
    SHELL
+
+subconfig.vm.provision "shell", inline: <<-SHELL
+echo '192.168.56.5 puppetmaster.local puppet' >> /etc/hosts
+echo '192.168.56.8 puppetclient2.local' >> /etc/hosts
+wget https://apt.puppetlabs.com/puppet7-release-focal.deb
+sudo dpkg -i puppet7-release-focal.deb
+sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 4528B6CD9E61EF26
+sudo apt update -y
+sudo apt install puppet-agent -y
+sudo apt-get -y install ntp
+sudo sed -i 's/.*JAVA_ARGS.*/JAVA_ARGS="-Xms512m -Xmx512m"/' /etc/default/puppetserver
+echo '[main]' >> /etc/puppetlabs/puppet/puppet.conf
+echo 'certname = 'puppetclient2.local'' >> /etc/puppetlabs/puppet/puppet.conf
+echo 'certname = 'puppetmaster.local puppet'' >> /etc/puppetlabs/puppet/puppet.conf
+cd /opt/puppetlabs/bin
+./puppet agent --server puppetmaster.local --waitforcert 60 --test
+sudo systemctl start puppet
+sudo systemctl enable puppet
+sudo /opt/puppetlabs/bin/puppet agent --test
+echo runinterval=200 >> /etc/puppetlabs/puppet/puppet.conf
+SHELL
+
+
   end
 
   config.vm.define "nginx.local" do |subconfig|
