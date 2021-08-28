@@ -2,49 +2,6 @@ BOX_IMAGE = "bento/ubuntu-20.04"
 NODE_COUNT = 2
 
 Vagrant.configure("2") do |config|
-  config.vm.define "puppet.local" do |subconfig|
-    subconfig.vm.box = BOX_IMAGE
-    subconfig.vm.provision "shell", inline: <<-SHELL
-    SHELL
-    subconfig.vm.hostname = "puppet.local"
-    subconfig.vm.network :private_network, ip: "192.168.56.5"
-    config.vm.provider :virtualbox do |vb|
-	 vb.customize ["modifyvm", :id, "--cableconnected0", "on"]
-         vb.memory = "2000"
-	 vb.gui = true
-#         vb.cpus = 2
-    end
-
-
-
-subconfig.vm.provision "file", source: "./templates/id_rsa.pub", destination: "~/.ssh/authorized_keys"
-    subconfig.vm.provision "file", source: "./templates/id_rsa", destination: "/home/vagrant/server_ca"
-    subconfig.vm.provision "shell", inline: <<-SHELL
-    sudo apt-get update
-   SHELL
-
-
-
- subconfig.vm.provision "shell", inline: <<-SHELL
-echo '192.168.56.5 puppetmaster.local puppet' >> /etc/hosts
-echo '192.168.56.6 puppetclient.local' >> /etc/hosts
-echo '192.168.56.8 puppetclient2.local' >> /etc/hosts
- wget https://apt.puppetlabs.com/puppet7-release-focal.deb 
-sudo dpkg -i puppet7-release-focal.deb 
-sudo apt -y update 
-sudo apt install puppetserver -y
-sudo apt-get -y install ntp 
-sudo sed -i 's/.*JAVA_ARGS.*/JAVA_ARGS="-Xms512m -Xmx512m"/' /etc/default/puppetserver
-echo '[agent]' >> /etc/puppetlabs/puppet/puppet.conf
-echo runinterval=300 >> /etc/puppetlabs/puppet/puppet.conf
-sudo hostname puppetmaster.local
-sudo systemctl start puppetserver
-sudo systemctl enable puppetserver
-sudo service puppet start
-sudo /opt/puppetlabs/bin/puppetserver ca list --all  
-SHELL
-
-end
 
 
 
@@ -128,6 +85,53 @@ sudo /opt/puppetlabs/bin/puppet agent --test
 echo runinterval=200 >> /etc/puppetlabs/puppet/puppet.conf
 SHELL
   end
+
+
+ config.vm.define "puppet.local" do |subconfig|
+    subconfig.vm.box = BOX_IMAGE
+    subconfig.vm.provision "shell", inline: <<-SHELL
+    SHELL
+    subconfig.vm.hostname = "puppet.local"
+    subconfig.vm.network :private_network, ip: "192.168.56.5"
+    config.vm.provider :virtualbox do |vb|
+        vb.customize ["modifyvm", :id, "--cableconnected0", "on"]
+        vb.memory = "2000"
+        vb.gui = true
+#         vb.cpus = 2
+    end
+
+
+
+subconfig.vm.provision "file", source: "./templates/id_rsa.pub", destination: "~/.ssh/authorized_keys"
+   subconfig.vm.provision "file", source: "./templates/id_rsa", destination: "/home/vagrant/server_ca"
+    subconfig.vm.provision "shell", inline: <<-SHELL
+    sudo apt-get update
+   SHELL
+
+
+
+ subconfig.vm.provision "shell", inline: <<-SHELL
+echo '192.168.56.5 puppetmaster.local puppet' >> /etc/hosts
+echo '192.168.56.6 puppetclient.local' >> /etc/hosts
+echo '192.168.56.8 puppetclient2.local' >> /etc/hosts
+ wget https://apt.puppetlabs.com/puppet7-release-focal.deb 
+sudo dpkg -i puppet7-release-focal.deb 
+sudo apt -y update 
+sudo apt install puppetserver -y
+sudo apt-get -y install ntp 
+sudo sed -i 's/.*JAVA_ARGS.*/JAVA_ARGS="-Xms512m -Xmx512m"/' /etc/default/puppetserver
+echo '[agent]' >> /etc/puppetlabs/puppet/puppet.conf
+echo runinterval=300 >> /etc/puppetlabs/puppet/puppet.conf
+sudo hostname puppetmaster.local
+sudo systemctl start puppetserver
+sudo systemctl enable puppetserver
+sudo service puppet start
+sleep 4m
+sudo /opt/puppetlabs/bin/puppetserver ca list --all
+sudo /opt/puppetlabs/bin/puppetserver ca sign --all   
+SHELL
+
+end
 
 
 
