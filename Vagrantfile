@@ -37,11 +37,12 @@ sudo sed -i 's/.*JAVA_ARGS.*/JAVA_ARGS="-Xms512m -Xmx512m"/' /etc/default/puppet
 echo '[main]' >> /etc/puppetlabs/puppet/puppet.conf
 echo 'certname = 'puppetclient2.local'' >> /etc/puppetlabs/puppet/puppet.conf
 echo 'certname = 'puppetmaster.local puppet'' >> /etc/puppetlabs/puppet/puppet.conf
-cd /opt/puppetlabs/bin
-./puppet agent --server puppetmaster.local --waitforcert 60 --test
+#cd /opt/puppetlabs/bin
+#./puppet agent --server puppetmaster.local --waitforcert 60 --test
+sudo hostname puppetclient2.local
 sudo systemctl start puppet
 sudo systemctl enable puppet
-sudo /opt/puppetlabs/bin/puppet agent --test
+#sudo /opt/puppetlabs/bin/puppet agent --test
 echo runinterval=200 >> /etc/puppetlabs/puppet/puppet.conf
 SHELL
 
@@ -77,11 +78,12 @@ sudo sed -i 's/.*JAVA_ARGS.*/JAVA_ARGS="-Xms512m -Xmx512m"/' /etc/default/puppet
 echo '[main]' >> /etc/puppetlabs/puppet/puppet.conf
 echo 'certname = 'puppetclient.local'' >> /etc/puppetlabs/puppet/puppet.conf
 echo 'certname = 'puppetmaster.local puppet'' >> /etc/puppetlabs/puppet/puppet.conf
-cd /opt/puppetlabs/bin
-./puppet agent --server puppetmaster.local --waitforcert 60 --test
+#cd /opt/puppetlabs/bin
+#./puppet agent --server puppetmaster.local --waitforcert 60 --test
+sudo hostname puppetclient.local
 sudo systemctl start puppet
 sudo systemctl enable puppet
-sudo /opt/puppetlabs/bin/puppet agent --test 
+#sudo /opt/puppetlabs/bin/puppet agent --test 
 echo runinterval=200 >> /etc/puppetlabs/puppet/puppet.conf
 SHELL
   end
@@ -127,11 +129,22 @@ sudo systemctl start puppetserver
 sudo systemctl enable puppetserver
 sudo service puppet start
 sleep 4m
+sudo /opt/puppetlabs/bin/puppet module install puppetlabs-apt
 sudo /opt/puppetlabs/bin/puppetserver ca list --all
-sudo /opt/puppetlabs/bin/puppetserver ca sign --all   
+sudo /opt/puppetlabs/bin/puppetserver ca sign --all
+sudo /opt/puppetlabs/bin/puppet agent --test   
 SHELL
 
+
+subconfig.vm.provision "file",
+source: "/home/sergey/vagrant/git/java-install-agent/site.pp",
+destination: "/tmp/site.pp"
+
+subconfig.vm.provision "shell", inline: "mv /tmp/site.pp /etc/puppetlabs/code/environments/production/manifests/site.pp"
+
+
 end
+  
 
 
 
