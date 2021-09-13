@@ -11,7 +11,7 @@ Vagrant.configure("2") do |config|
     subconfig.vm.network :private_network, ip: "192.168.56.8"
     config.vm.provider :virtualbox do |vb|
 	 vb.customize ["modifyvm", :id, "--cableconnected0", "on"]
-         vb.memory = "2000"
+         vb.memory = "2500"
 	 vb.gui = true
 #         vb.cpus = 2
     end
@@ -37,12 +37,9 @@ sudo sed -i 's/.*JAVA_ARGS.*/JAVA_ARGS="-Xms512m -Xmx512m"/' /etc/default/puppet
 echo '[main]' >> /etc/puppetlabs/puppet/puppet.conf
 echo 'certname = 'puppetclient2.local'' >> /etc/puppetlabs/puppet/puppet.conf
 echo 'certname = 'puppetmaster.local puppet'' >> /etc/puppetlabs/puppet/puppet.conf
-#cd /opt/puppetlabs/bin
-#./puppet agent --server puppetmaster.local --waitforcert 60 --test
 sudo hostname puppetclient2.local
 sudo systemctl start puppet
 sudo systemctl enable puppet
-#sudo /opt/puppetlabs/bin/puppet agent --test
 echo runinterval=200 >> /etc/puppetlabs/puppet/puppet.conf
 SHELL
 
@@ -78,15 +75,82 @@ sudo sed -i 's/.*JAVA_ARGS.*/JAVA_ARGS="-Xms512m -Xmx512m"/' /etc/default/puppet
 echo '[main]' >> /etc/puppetlabs/puppet/puppet.conf
 echo 'certname = 'puppetclient.local'' >> /etc/puppetlabs/puppet/puppet.conf
 echo 'certname = 'puppetmaster.local puppet'' >> /etc/puppetlabs/puppet/puppet.conf
-#cd /opt/puppetlabs/bin
-#./puppet agent --server puppetmaster.local --waitforcert 60 --test
 sudo hostname puppetclient.local
 sudo systemctl start puppet
 sudo systemctl enable puppet
-#sudo /opt/puppetlabs/bin/puppet agent --test 
 echo runinterval=200 >> /etc/puppetlabs/puppet/puppet.conf
 SHELL
   end
+
+
+
+
+config.vm.define "node1.local" do |subconfig|
+    subconfig.vm.box = BOX_IMAGE
+    subconfig.vm.hostname = "jenkins.local"
+    subconfig.vm.network :private_network, ip: "192.168.56.9"
+    config.vm.provider :virtualbox do |vb|
+         vb.customize ["modifyvm", :id, "--cableconnected0", "on"]
+         vb.memory = "2000"
+         vb.gui = true
+#         vb.cpus = 2
+    end
+
+
+
+    subconfig.vm.provision "file", source: "./templates/id_rsa.pub", destination: "~/.ssh/authorized_keys"
+    subconfig.vm.provision "file", source: "./templates/id_rsa", destination: "/home/vagrant/server_ca"
+    subconfig.vm.provision "shell", inline: <<-SHELL
+    sudo apt-get update
+   SHELL
+
+subconfig.vm.provision "shell", inline: <<-SHELL
+echo '192.168.56.5 puppetmaster.local puppet' >> /etc/hosts
+echo '192.168.56.9 puppetclient3.local' >> /etc/hosts
+wget https://apt.puppetlabs.com/puppet7-release-focal.deb
+sudo dpkg -i puppet7-release-focal.deb
+sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 4528B6CD9E61EF26
+sudo apt update -y
+sudo apt install puppet-agent -y
+sudo apt-get -y install ntp
+sudo sed -i 's/.*JAVA_ARGS.*/JAVA_ARGS="-Xms512m -Xmx512m"/' /etc/default/puppetserver
+echo '[main]' >> /etc/puppetlabs/puppet/puppet.conf
+echo 'certname = 'puppetclient3.local'' >> /etc/puppetlabs/puppet/puppet.conf
+echo 'certname = 'puppetmaster.local puppet'' >> /etc/puppetlabs/puppet/puppet.conf
+sudo hostname puppetclient3.local
+sudo systemctl start puppet
+sudo systemctl enable puppet
+echo runinterval=200 >> /etc/puppetlabs/puppet/puppet.conf
+SHELL
+
+
+  end
+
+
+
+
+
+
+#  (1..NODE_COUNT).each do |i|
+ #  config.vm.define "node#{i}.local" do |subconfig|
+ #     subconfig.vm.box = BOX_IMAGE
+ #     subconfig.vm.hostname = "node#{i}.local"
+ #     subconfig.vm.network :private_network, ip: "192.168.56.#{i + 50}"
+ #     config.vm.provider :virtualbox do |vb|
+ #               vb.customize ["modifyvm", :id, "--cableconnected0", "on"]
+  #       vb.memory = "2000"
+  #     vb.gui = true
+#         vb.cpus = 2
+ #     end
+ #     subconfig.vm.provision "file", source: "./templates/id_rsa.pub", destination: "~/.ssh/authorized_keys"
+ #    subconfig.vm.provision "file", source: "./templates/id_rsa", destination: "/home/vagrant/server_ca"
+ #     subconfig.vm.provision "shell", inline: <<-SHELL
+ #     SHELL
+
+
+
+
+
 
 
  config.vm.define "puppet.local" do |subconfig|
@@ -143,26 +207,16 @@ destination: "/tmp/site.pp"
 subconfig.vm.provision "shell", inline: "mv /tmp/site.pp /etc/puppetlabs/code/environments/production/manifests/site.pp"
 
 
+#subconfig.vm.provision "file",
+#source: "/home/sergey/vagrant/git/java-install-agent/site2.pp",
+#destination: "/tmp/site2.pp"
+
+#subconfig.vm.provision "shell", inline: "mv /tmp/site2.pp /etc/puppetlabs/code/environments/production/manifests/site2.pp"
+
+
+
 end
-  
 
-
-
-  (1..NODE_COUNT).each do |i|
-    config.vm.define "node#{i}.local" do |subconfig|
-      subconfig.vm.box = BOX_IMAGE
-      subconfig.vm.hostname = "node#{i}.local"
-      subconfig.vm.network :private_network, ip: "192.168.56.#{i + 50}"
-      config.vm.provider :virtualbox do |vb|
-       	 vb.customize ["modifyvm", :id, "--cableconnected0", "on"]
-         vb.memory = "2000"
-	 vb.gui = true
-#         vb.cpus = 2
-      end
-      subconfig.vm.provision "file", source: "./templates/id_rsa.pub", destination: "~/.ssh/authorized_keys"
-      subconfig.vm.provision "file", source: "./templates/id_rsa", destination: "/home/vagrant/server_ca"
-      subconfig.vm.provision "shell", inline: <<-SHELL
-      SHELL
-end    
+    
   end
- end
+ 
