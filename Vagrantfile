@@ -31,6 +31,14 @@ wget https://apt.puppetlabs.com/puppet7-release-focal.deb
 sudo dpkg -i puppet7-release-focal.deb
 sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 4528B6CD9E61EF26
 sudo apt update -y
+
+sudo mkdir -p /var/lib/jenkins/.ssh/
+sudo cp -rp /home/vagrant/server_ca /var/lib/jenkins/.ssh/
+sudo chmod 600 /var/lib/jenkins/.ssh/server_ca
+wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo apt-key add -
+sudo sh -c 'echo deb https://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
+sudo apt-get update
+
 sudo apt install puppet-agent -y
 sudo apt-get -y install ntp
 sudo sed -i 's/.*JAVA_ARGS.*/JAVA_ARGS="-Xms512m -Xmx512m"/' /etc/default/puppetserver
@@ -41,6 +49,8 @@ sudo hostname puppetclient2.local
 sudo systemctl start puppet
 sudo systemctl enable puppet
 echo runinterval=200 >> /etc/puppetlabs/puppet/puppet.conf
+ 
+
 SHELL
 
 
@@ -180,6 +190,7 @@ subconfig.vm.provision "file", source: "./templates/id_rsa.pub", destination: "~
 echo '192.168.56.5 puppetmaster.local puppet' >> /etc/hosts
 echo '192.168.56.6 puppetclient.local' >> /etc/hosts
 echo '192.168.56.8 puppetclient2.local' >> /etc/hosts
+echo '192.168.56.9 puppetclient3.local' >> /etc/hosts
  wget https://apt.puppetlabs.com/puppet7-release-focal.deb 
 sudo dpkg -i puppet7-release-focal.deb 
 sudo apt -y update 
@@ -188,6 +199,9 @@ sudo apt-get -y install ntp
 sudo sed -i 's/.*JAVA_ARGS.*/JAVA_ARGS="-Xms512m -Xmx512m"/' /etc/default/puppetserver
 echo '[agent]' >> /etc/puppetlabs/puppet/puppet.conf
 echo runinterval=300 >> /etc/puppetlabs/puppet/puppet.conf
+
+#sudo puppet module install rtyler/jenkins
+
 sudo hostname puppetmaster.local
 sudo systemctl start puppetserver
 sudo systemctl enable puppetserver
@@ -196,7 +210,10 @@ sleep 4m
 sudo /opt/puppetlabs/bin/puppet module install puppetlabs-apt
 sudo /opt/puppetlabs/bin/puppetserver ca list --all
 sudo /opt/puppetlabs/bin/puppetserver ca sign --all
-sudo /opt/puppetlabs/bin/puppet agent --test   
+sudo /opt/puppetlabs/bin/puppet agent --test
+
+
+   
 SHELL
 
 
